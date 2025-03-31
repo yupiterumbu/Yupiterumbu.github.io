@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Sistem Pertandingan Sepak Bola</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 0;
+      padding: 0;
+      background-color: #f4f4f9;
+      color: #333;
+    }
+
+    .container {
+      max-width: 800px;
+      margin: 20px auto;
+      padding: 20px;
+      background: #fff;
+      box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+      border-radius: 8px;
+    }
+
+    h1, h2 {
+      text-align: center;
+      color: #0056b3;
+    }
+
+    button {
+      background-color: #0056b3;
+      color: #fff;
+      border: none;
+      padding: 10px 15px;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+
+    button:hover {
+      background-color: #003d82;
+    }
+
+    input, select {
+      padding: 10px;
+      margin-right: 10px;
+      border: 1px solid #ccc;
+      border-radius: 5px;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 10px;
+    }
+
+    th, td {
+      padding: 8px;
+      text-align: left;
+      border: 1px solid #ddd;
+    }
+
+    th {
+      background-color: #f2f2f2;
+    }
+
+    .highlight {
+      background-color: #f8d7da;
+    }
+
+    .input-section {
+      margin-bottom: 20px;
+      background-color: #f9f9f9;
+      padding: 15px;
+      border-radius: 8px;
+    }
+
+    .input-section h2 {
+      margin: 0 0 15px 0;
+    }
+
+    .group {
+      margin: 20px 0;
+    }
+
+    .red-zone {
+      background-color: #f8d7da;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Sistem Pertandingan Sepak Bola</h1>
+
+    <!-- Input Tim -->
+    <div class="input-section">
+      <h2>Input Tim</h2>
+      <input type="text" id="team-name" placeholder="Masukkan nama tim">
+      <button onclick="addTeam()">Tambah Tim</button>
+      <p class="error" id="team-error"></p>
+    </div>
+
+    <!-- Tabel Tim -->
+    <div class="input-section">
+      <h2>Daftar Tim</h2>
+      <ul id="team-list"></ul>
+      <button onclick="createGroups()">Buat Grup</button>
+    </div>
+
+    <!-- Input Pertandingan -->
+    <div class="input-section">
+      <h2>Input Pertandingan</h2>
+      <label for="team1">Tim 1:</label>
+      <select id="team1"></select>
+
+      <label for="score1">Skor:</label>
+      <input type="number" id="score1" placeholder="Skor Tim 1">
+
+      <label for="team2">Tim 2:</label>
+      <select id="team2"></select>
+
+      <label for="score2">Skor:</label>
+      <input type="number" id="score2" placeholder="Skor Tim 2">
+
+      <button onclick="submitMatch()">Tambahkan Pertandingan</button>
+      <p class="error" id="input-error"></p>
+    </div>
+
+    <!-- Tabel Grup -->
+    <div class="group-section" id="groups"></div>
+  </div>
+
+  <script>
+    const teams = [];
+    const groups = [];
+
+    function addTeam() {
+      const teamInput = document.getElementById("team-name");
+      const teamName = teamInput.value.trim();
+      const errorField = document.getElementById("team-error");
+
+      errorField.textContent = "";
+
+      if (!teamName) {
+        errorField.textContent = "Nama tim tidak boleh kosong!";
+        return;
+      }
+
+      teams.push({ name: teamName, points: 0, goals: 0 });
+      displayTeams();
+      teamInput.value = "";
+    }
+
+    function displayTeams() {
+      const teamList = document.getElementById("team-list");
+      teamList.innerHTML = teams.map((team, index) => `<li>${index + 1}. ${team.name}</li>`).join("");
+    }
+
+    function createGroups() {
+      const groupSize = Math.ceil(teams.length / 4); // Asumsikan 4 grup
+      const shuffledTeams = [...teams].sort(() => Math.random() - 0.5);
+
+      groups.length = 0;
+      for (let i = 0; i < 4; i++) {
+        groups.push(shuffledTeams.slice(i * groupSize, (i + 1) * groupSize));
+      }
+
+      displayGroups();
+      populateTeamOptions();
+    }
+
+    function displayGroups() {
+      const groupsContainer = document.getElementById("groups");
+      groupsContainer.innerHTML = "";
+
+      groups.forEach((group, index) => {
+        // Urutkan berdasarkan poin
+        group.sort((a, b) => b.points - a.points);
+
+        const groupElement = document.createElement("div");
+        groupElement.className = "group";
+
+        groupElement.innerHTML = `
+          <h3>Grup ${String.fromCharCode(65 + index)}</h3>
+          <table>
+            <thead>
+              <tr>
+                <th>Tim</th>
+                <th>Poin</th>
+                <th>Gol</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${group.map((team, idx) => `
+                <tr class="${idx >= 2 ? 'red-zone' : ''}">
+                  <td>${team.name}</td>
+                  <td>${team.points}</td>
+                  <td>${team.goals}</td>
+                </tr>
+              `).join("")}
+            </tbody>
+          </table>`;
+        groupsContainer.appendChild(groupElement);
+      });
+    }
+
+    function populateTeamOptions() {
+      const team1Select = document.getElementById("team1");
+      const team2Select = document.getElementById("team2");
+
+      team1Select.innerHTML = "";
+      team2Select.innerHTML = "";
+
+      teams.forEach((team, index) => {
+        const option1 = document.createElement("option");
+        option1.value = index;
+        option1.textContent = team.name;
+
+        const option2 = option1.cloneNode(true);
+
+        team1Select.appendChild(option1);
+        team2Select.appendChild(option2);
+      });
+    }
+
+    function submitMatch() {
+      const team1Index = parseInt(document.getElementById("team1").value);
+      const team2Index = parseInt(document.getElementById("team2").value);
+      const score1 = parseInt(document.getElementById("score1").value);
+      const score2 = parseInt(document.getElementById("score2").value);
+      const errorField = document.getElementById("input-error");
+
+      errorField.textContent = "";
+
+      if (isNaN(score1) || isNaN(score2)) {
+        errorField.textContent = "Skor harus berupa angka.";
+        return;
+      }
+
+      if (team1Index === team2Index) {
+        errorField.textContent = "Tim tidak boleh sama.";
+        return;
+      }
+
+      const team1 = teams[team1Index];
+      const team2 = teams[team2Index];
+
+      if (score1 > score2) {
+        team1.points += 3;
+      } else if (score1 < score2) {
+        team2.points += 3;
+      } else {
+        team1.points += 1;
+        team2.points += 1;
+      }
+
+      team1.goals += score1;
+      team2.goals += score2;
+
+      displayGroups();
+    }
+  </script>
+</body>
+</html>
